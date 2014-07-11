@@ -124,7 +124,8 @@ package com.hsharma.hungryHero.screens
 		private var hitObstacleP2:Number = 0;
 		
 		/** Lives Count. */		
-		private var lives:int;
+		private var livesP1:int;
+		private var livesP2:int;
 		
 		/** How long have we had a coffee item. */
 		private var coffee:Number = 0;
@@ -242,7 +243,9 @@ package com.hsharma.hungryHero.screens
 		// ------------------------------------------------------------------------------------------------------------
 		
 		/** HUD Container. */		
-		private var hud:HUD;
+		private var hudP1:HUD;
+		
+		private var hudP2:HUD;
 		
 		// ------------------------------------------------------------------------------------------------------------
 		// INTERFACE OBJECTS
@@ -341,7 +344,7 @@ package com.hsharma.hungryHero.screens
 			itemsToAnimateLength = 0;
 			
 			// Create items, add them to pool and place them outside the stage area.
-			createFoodItemsPool();
+			//createFoodItemsPool();
 			
 			// Initialize obstacles-to-animate vector.
 			obstaclesToAnimate = new Vector.<Obstacle>();
@@ -387,8 +390,12 @@ package com.hsharma.hungryHero.screens
 		 */
 		private function drawHUD():void
 		{
-			hud = new HUD();
-			this.addChild(hud);
+			hudP1 = new HUD();
+			hudP2 = new HUD();
+			this.addChild(hudP1);
+			this.addChild(hudP2);
+			hudP2.y = hudP1.y + 50;
+			
 		}
 		
 		/**
@@ -435,7 +442,9 @@ package com.hsharma.hungryHero.screens
 		private function foodItemCreate():Item
 		{
 			var foodItem:Item = new Item(Math.ceil(Math.random() * 5));
-			foodItem.x = stage.stageWidth + foodItem.width * 2;
+			//foodItem.x = stage.stageWidth + foodItem.width * 6;
+			foodItem.x = 2000;
+			//foodItem.y = 200;
 			this.addChild(foodItem);
 			
 			return foodItem;
@@ -574,7 +583,8 @@ package com.hsharma.hungryHero.screens
 			gameArea = new Rectangle(0, 100, stage.stageWidth, stage.stageHeight - 250);
 			
 			// Define lives.
-			lives = GameConstants.HERO_LIVES;
+			livesP1 = GameConstants.HERO_LIVES;
+			livesP2 = GameConstants.HERO_LIVES;
 			
 			// Reset hit, camera shake and player speed.
 			hitObstacleP1 = 0;
@@ -625,9 +635,9 @@ package com.hsharma.hungryHero.screens
 			touchYP2 = heroP2.y;
 			
 			// Reset hud values and text fields.
-			hud.foodScore = 0;
-			hud.distance = 0;
-			hud.lives = lives;
+			hudP1.foodScore = 0;
+			hudP1.distance = 0;
+			hudP1.lives = livesP1;
 			
 			// Reset background's state to idle.
 			bg.state = GameConstants.GAME_STATE_IDLE;
@@ -774,7 +784,7 @@ package com.hsharma.hungryHero.screens
 								heroP2.x += ((stage.stageWidth * 0.5 * 0.5 + 25) - heroP2.x) * 0.05;
 								heroP2.y -= (heroP2.y - touchYP2) * 0.1;
 								
-								playerSpeed += (GameConstants.HERO_MIN_SPEED - playerSpeed) * 0.05;
+								//playerSpeed += (GameConstants.HERO_MIN_SPEED - playerSpeed) * 0.05;
 								//bg.speed = playerSpeedP2 * elapsedP2;
 							}
 							else
@@ -842,6 +852,7 @@ package com.hsharma.hungryHero.screens
 						if (hitObstacleP1 <= 0)
 						{
 							heroP1.y -= (heroP1.y - touchYP1) * 0.1;
+							heroP1.x -= (heroP1.x - touchXP1) * 0.1;
 							
 							// If hero is flying extremely fast, create a wind effect and show force field around hero.
 							if (playerSpeed > GameConstants.HERO_MIN_SPEED + 100)
@@ -878,7 +889,6 @@ package com.hsharma.hungryHero.screens
 						else
 						{
 							// Hit by obstacle
-							
 							if (coffee <= 0)
 							{
 								// Play hero animation for obstacle hit.
@@ -906,7 +916,7 @@ package com.hsharma.hungryHero.screens
 						if (hitObstacleP2 <= 0)
 						{
 							heroP2.y -= (heroP2.y - touchYP2) * 0.1;
-							
+							heroP2.x -= (heroP2.x - touchXP2) * 0.1;
 							// If hero is flying extremely fast, create a wind effect and show force field around hero.
 							if (playerSpeed > GameConstants.HERO_MIN_SPEED + 100)
 							{
@@ -1008,7 +1018,7 @@ package com.hsharma.hungryHero.screens
 						
 						// Calculate maximum distance travelled.
 						scoreDistanceP1 += (playerSpeed * elapsedP1) * 0.1;
-						hud.distance = Math.round(scoreDistanceP1);
+						hudP1.distance = Math.round(scoreDistanceP1);
 						
 						break;
 					
@@ -1125,7 +1135,7 @@ package com.hsharma.hungryHero.screens
 				else
 				{
 					// If random number is > normal item chance (0.3), decide on a random special item.
-					pattern = Math.ceil(Math.random() * 2) + 9;
+					//pattern = Math.ceil(Math.random() * 2) + 9;
 				}
 				
 				if (pattern == 1)  
@@ -1374,6 +1384,7 @@ package com.hsharma.hungryHero.screens
 						// Move the item towards the player.
 						itemToTrack.x -= (itemToTrack.x - heroXP1) * 0.2;
 						itemToTrack.y -= (itemToTrack.y - heroYP1) * 0.2;
+						
 					}
 					else
 					{
@@ -1395,13 +1406,18 @@ package com.hsharma.hungryHero.screens
 						heroItem_yDistP1 = itemToTrack.y - heroYP1;
 						heroItem_sqDistP1 = heroItem_xDistP1 * heroItem_xDistP1 + heroItem_yDistP1 * heroItem_yDistP1;
 						
+						heroItem_xDistP2 = itemToTrack.x - heroXP2;
+						heroItem_yDistP2 = itemToTrack.y - heroYP2;
+						heroItem_sqDistP2 = heroItem_xDistP2 * heroItem_xDistP2 + heroItem_yDistP2 * heroItem_yDistP2;
+						
+						
 						if (heroItem_sqDistP1 < 5000)
 						{
 							// If hero eats an item, add up the score.
 							if (itemToTrack.foodItemType <= GameConstants.ITEM_TYPE_5)
 							{
 								scoreItemsP1 += itemToTrack.foodItemType;
-								hud.foodScore = scoreItemsP1;
+								hudP1.foodScore = scoreItemsP1;
 								if (!Sounds.muted) Sounds.sndEat.play();
 							}
 							else if (itemToTrack.foodItemType == GameConstants.ITEM_TYPE_COFFEE) 
@@ -1433,75 +1449,44 @@ package com.hsharma.hungryHero.screens
 							// Dispose the food item.
 							disposeItemTemporarily(i, itemToTrack);
 						}
-					}
-					
-					if(_isPlayer2)
-					{
-						// If hero has eaten a mushroom, make all the items move towards him.
-						if (mushroom > 0 && itemToTrack.foodItemType <= GameConstants.ITEM_TYPE_5)
-						{
-							// Move the item towards the player.
-							itemToTrack.x -= (itemToTrack.x - heroXP2) * 0.2;
-							itemToTrack.y -= (itemToTrack.y - heroYP2) * 0.2;
-						}
-						else
-						{
-							// If hero hasn't eaten a mushroom,
-							// Move the items normally towards the left.
-							itemToTrack.x -= playerSpeed * elapsedP2; 
-						}
 						
-						// If the item passes outside the screen on the left, remove it (check-in).
-						
-						if (itemToTrack.x < -80 || gameState == GameConstants.GAME_STATE_OVER)
+						if (heroItem_sqDistP2 < 5000)
 						{
-							disposeItemTemporarily(i, itemToTrack);
-						}
-						else
-						{
-							// Collision detection - Check if the hero eats a food item.
-							heroItem_xDistP2 = itemToTrack.x - heroXP2;
-							heroItem_yDistP2 = itemToTrack.y - heroYP2;
-							heroItem_sqDistP2 = heroItem_xDistP2 * heroItem_xDistP2 + heroItem_yDistP2 * heroItem_yDistP2;
-							
-							if (heroItem_sqDistP2 < 5000)
+							// If hero eats an item, add up the score.
+							if (itemToTrack.foodItemType <= GameConstants.ITEM_TYPE_5)
 							{
-								// If hero eats an item, add up the score.
-								if (itemToTrack.foodItemType <= GameConstants.ITEM_TYPE_5)
-								{
-									scoreItemsP2 += itemToTrack.foodItemType;
-									hud.foodScore = scoreItemsP2;
-									if (!Sounds.muted) Sounds.sndEat.play();
-								}
-								else if (itemToTrack.foodItemType == GameConstants.ITEM_TYPE_COFFEE) 
-								{
-									// If hero drinks coffee, add up the score.
-									scoreItemsP2 += 1;
-									
-									// How long does coffee power last? (in seconds)
-									coffee = 5;
-									if (isHardwareRendering) particleCoffee.start(coffee);
-									
-									if (!Sounds.muted) Sounds.sndCoffee.play();
-								}
-								else if (itemToTrack.foodItemType == GameConstants.ITEM_TYPE_MUSHROOM) 
-								{
-									// If hero eats a mushroom, add up the score.
-									scoreItemsP2 += 1;
-									
-									// How long does mushroom power last? (in seconds)
-									mushroom = 4;
-									if (isHardwareRendering) particleMushroom.start(mushroom);
-									
-									if (!Sounds.muted) Sounds.sndMushroom.play();
-								}
-								
-								// Create an eat particle at the position of the food item that was eaten.
-								createEatParticle(itemToTrack);
-								
-								// Dispose the food item.
-								disposeItemTemporarily(i, itemToTrack);
+								scoreItemsP2 += itemToTrack.foodItemType;
+								hudP2.foodScore = scoreItemsP2;
+								if (!Sounds.muted) Sounds.sndEat.play();
 							}
+							else if (itemToTrack.foodItemType == GameConstants.ITEM_TYPE_COFFEE) 
+							{
+								// If hero drinks coffee, add up the score.
+								scoreItemsP2 += 1;
+								
+								// How long does coffee power last? (in seconds)
+								coffee = 5;
+								if (isHardwareRendering) particleCoffee.start(coffee);
+								
+								if (!Sounds.muted) Sounds.sndCoffee.play();
+							}
+							else if (itemToTrack.foodItemType == GameConstants.ITEM_TYPE_MUSHROOM) 
+							{
+								// If hero eats a mushroom, add up the score.
+								scoreItemsP2 += 1;
+								
+								// How long does mushroom power last? (in seconds)
+								mushroom = 4;
+								if (isHardwareRendering) particleMushroom.start(mushroom);
+								
+								if (!Sounds.muted) Sounds.sndMushroom.play();
+							}
+							
+							// Create an eat particle at the position of the food item that was eaten.
+							createEatParticle(itemToTrack);
+							
+							// Dispose the food item.
+							disposeItemTemporarily(i, itemToTrack);
 						}
 					}
 				}
@@ -1640,6 +1625,7 @@ package com.hsharma.hungryHero.screens
 			{
 				var obstacleToTrack:Obstacle;
 				var heroRect:Rectangle;
+				var heroRect2:Rectangle;
 				var obstacleRect:Rectangle;
 				
 				for (var i:uint = 0; i < obstaclesToAnimateLength ; i ++)
@@ -1675,6 +1661,10 @@ package com.hsharma.hungryHero.screens
 					heroObstacle_xDistP1 = obstacleToTrack.x - heroXP1;
 					heroObstacle_yDistP1 = obstacleToTrack.y - heroYP1;
 					heroObstacle_sqDistP1 = heroObstacle_xDistP1 * heroObstacle_xDistP1 + heroObstacle_yDistP1 * heroObstacle_yDistP1;
+					
+					heroObstacle_xDistP2 = obstacleToTrack.x - heroXP2;
+					heroObstacle_yDistP2 = obstacleToTrack.y - heroYP2;
+					heroObstacle_sqDistP2 = heroObstacle_xDistP2 * heroObstacle_xDistP2 + heroObstacle_yDistP2 * heroObstacle_yDistP2;
 
 					if (heroObstacle_sqDistP1 < 5000 && !obstacleToTrack.alreadyHit)
 					{
@@ -1709,15 +1699,60 @@ package com.hsharma.hungryHero.screens
 							if (!Sounds.muted) Sounds.sndHurt.play();
 							
 							// Update lives.
-							lives--;
+							livesP1--;
 							
-							if (lives <= 0)
+							if (livesP1 <= 0)
 							{
-								lives = 0;
+								livesP1 = 0;
 								endGame();
 							}
 							
-							hud.lives = lives;
+							hudP1.lives = livesP1;
+						}
+					}
+					
+					if (heroObstacle_sqDistP2 < 5000 && !obstacleToTrack.alreadyHit)
+					{
+						obstacleToTrack.alreadyHit = true;
+						
+						if (!Sounds.muted) Sounds.sndHit.play();
+						
+						if (coffee > 0) 
+						{
+							// If hero has a coffee item, break through the obstacle.
+							if (obstacleToTrack.position == "bottom") obstacleToTrack.rotation = deg2rad(100);
+							else obstacleToTrack.rotation = deg2rad(-100);
+							
+							// Set hit obstacle value.
+							hitObstacleP2 = 30;
+							
+							// Reduce hero's speed
+							playerSpeed *= 0.8; 
+						}
+						else 
+						{
+							if (obstacleToTrack.position == "bottom") obstacleToTrack.rotation = deg2rad(70);
+							else obstacleToTrack.rotation = deg2rad(-70);
+							
+							// Otherwise, if hero doesn't have a coffee item, set hit obstacle value.
+							hitObstacleP2 = 30; 
+							
+							// Reduce hero's speed.
+							playerSpeed *= 0.5; 
+							
+							// Play hurt sound.
+							if (!Sounds.muted) Sounds.sndHurt.play();
+							
+							// Update lives.
+							livesP2--;
+							
+							if (livesP2 <= 0)
+							{
+								livesP2 = 0;
+								endGame();
+							}
+							
+							hudP2.lives = livesP2;
 						}
 					}
 					

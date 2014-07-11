@@ -14,11 +14,18 @@
 package com.hsharma.hungryHero.screens
 {
 	import com.hsharma.hungryHero.customObjects.Font;
+	import com.hsharma.hungryHero.events.DataSendEvent;
 	import com.hsharma.hungryHero.events.NavigationEvent;
 	
+	import flash.events.NetStatusEvent;
+	import flash.events.TimerEvent;
 	import flash.media.SoundMixer;
+	import flash.net.GroupSpecifier;
+	import flash.net.NetConnection;
+	import flash.net.NetGroup;
 	import flash.net.URLRequest;
 	import flash.net.navigateToURL;
+	import flash.utils.Timer;
 	
 	import starling.animation.Transitions;
 	import starling.animation.Tween;
@@ -31,6 +38,9 @@ package com.hsharma.hungryHero.screens
 	import starling.text.TextField;
 	import starling.utils.HAlign;
 	import starling.utils.VAlign;
+	
+	import util.DataSendEvent;
+	
 	
 	/**
 	 * This is the welcome or main menu class for the game.
@@ -82,11 +92,104 @@ package com.hsharma.hungryHero.screens
 		/** Hero art tween object. */
 		private var tween_hero:Tween;
 		
+		private var _p1Joined:Boolean = false;
+		private var _p2Joined:Boolean = false;
+		
+		private var _isP1:Boolean = false;
+		private var _isP2:Boolean = false;
+		
+		private var _connected:Boolean= false;
+		
+		public static const P1_JOINED:String = "p1Joined";
+		public static const P2_JOINED:String = "p2Joined";
+		public static const UPDATE:String = "update";
+		
+		private var p1JoinLabel:TextField;
+		private var p2JoinLabel:TextField;
+		
+		private var _localNet:NetConnection;
+		private var _netGroup:NetGroup;
+		
+		private var _waitTimer:Timer = new Timer(2000,1); 
+		
+		private var _waiting:Boolean = true; 
+		
 		public function Welcome()
 		{
 			super();
 			this.visible = false;
 			this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+			setUpNetConnection();
+		}
+		
+		private function setUpNetConnection():void
+		{
+			_localNet = new NetConnection();
+			_localNet.addEventListener(NetStatusEvent.NET_STATUS, netStatus);
+			_localNet.connect("rtmfp:");
+			_waitTimer.addEventListener(TimerEvent.TIMER_COMPLETE,onTimerComplete);
+			_waitTimer.start();
+		}
+		
+		protected function onTimerComplete(event:TimerEvent):void
+		{
+			_waitTimer.stop();
+			_waiting = false;
+			_localNet.connect("rtmfp:");
+		}
+		
+		
+		protected function netStatus(event:NetStatusEvent):void
+		{
+			
+			switch(event.info.code){
+				case "NetConnection.Connect.Success":
+					setupGroup();
+					break;
+				
+				case "NetGroup.Connect.Success":
+					_connected = true;
+					if(_isP1 == false && _waiting == false)
+					{
+						p1JoinLabel.text = 'p1 joined';
+						_isP1 = true;
+					}
+					else if(_isP1 == true)
+					{
+						p2JoinLabel.text = 'p2 joined';
+						_isP2 = true;
+					}
+					break;
+				
+				case "NetConnection.Connect.Closed":
+					_connected = false;
+					break;
+				
+				case "NetGroup.SendTo.Notify":
+					var e:DataSendEvent = event.info.message as com.hsharma.hungryHero.events.DataSendEvent;
+					switch(e.event)
+					{
+						case UPDATE:
+						{
+							var info:Object = e.data;
+						}	
+							
+					}
+					break;
+			}
+		}
+		
+		private function setupGroup():void
+		{
+			var groupspec:GroupSpecifier = new GroupSpecifier("Contra");
+			groupspec.ipMulticastMemberUpdatesEnabled = true;
+			groupspec.multicastEnabled = true;
+			groupspec.routingEnabled = true;
+			groupspec.postingEnabled = true;
+			groupspec.addIPMulticastAddress("239.254.254.1:30303");
+			
+			_netGroup = new NetGroup(_localNet, groupspec.groupspecWithAuthorizations());
+			_netGroup.addEventListener(NetStatusEvent.NET_STATUS, netStatus);
 		}
 		
 		/**
@@ -134,7 +237,7 @@ package com.hsharma.hungryHero.screens
 			joinBtn = new Button(Assets.getAtlas().getTexture("welcome_playButton"));
 			joinBtn.x = 450;
 			joinBtn.y = 340;
-			joinBtn.addEventListener(Event.TRIGGERED, onPlayClick);
+			joinBtn.addEventListener(Event.TRIGGERED, onJoinClick);
 			this.addChild(joinBtn);
 			
 			aboutBtn = new Button(Assets.getAtlas().getTexture("welcome_aboutButton"));
@@ -142,6 +245,19 @@ package com.hsharma.hungryHero.screens
 			aboutBtn.y = 460;
 			aboutBtn.addEventListener(Event.TRIGGERED, onAboutClick);
 			this.addChild(aboutBtn);
+			
+			
+			p1JoinLabel = new TextField(150,80,'p1 not joined');
+			p2JoinLabel = new TextField(150,80,'p2 not joined');
+			
+			this.addChild(p1JoinLabel);
+			this.addChild(p2JoinLabel);
+			
+			p1JoinLabel.x = 460;
+			p1JoinLabel.y = 250;
+			
+			p2JoinLabel.x = 600;
+			p2JoinLabel.y = 250;
 			
 			// ABOUT ELEMENTS
 			fontRegular = Fonts.getFont("Regular");
@@ -217,6 +333,16 @@ package com.hsharma.hungryHero.screens
 		 */
 		private function onPlayClick(event:Event):void
 		{
+			
+			var e:DataSendEvent = new DataSendEvent();
+			
+			var info:Object = new Object(); 
+			info.player = "p2";
+			
+			e.data = info;
+			e.event = UPDATE;
+			_netGroup.sendToAllNeighbors(e);
+			
 			this.dispatchEvent(new NavigationEvent(NavigationEvent.CHANGE_SCREEN, {id: "play"}, true));
 			
 			if (!Sounds.muted) Sounds.sndCoffee.play();
@@ -224,7 +350,7 @@ package com.hsharma.hungryHero.screens
 		
 		private function onJoinClick(event:Event):void
 		{
-			this.dispatchEvent(new NavigationEvent(NavigationEvent.CHANGE_SCREEN, {id: "play_join"}, true));
+			//this.dispatchEvent(new NavigationEvent(NavigationEvent.CHANGE_SCREEN, {id: "play_join"}, true));
 			
 			if (!Sounds.muted) Sounds.sndCoffee.play();
 		}
@@ -306,6 +432,8 @@ package com.hsharma.hungryHero.screens
 			hero.y = 130 + (Math.cos(_currentDate.getTime() * 0.002)) * 25;
 			playBtn.y = 340 + (Math.cos(_currentDate.getTime() * 0.002)) * 10;
 			aboutBtn.y = 460 + (Math.cos(_currentDate.getTime() * 0.002)) * 10;
+			
+			joinBtn.y = 340 + (Math.cos(_currentDate.getTime() * 0.002)) * 10;
 		}
 		
 		/**
